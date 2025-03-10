@@ -17,6 +17,7 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <map>
 using namespace std;
 
 // status codes to be returned when looking up a reference
@@ -27,9 +28,14 @@ class Bible {	// A class to represent a version of the bible
    string infile;		// file path name
    ifstream instream;	// input stream, used when file is open
    bool isOpen;			// true if file is open
+   std::map <Ref, int> BibleRefs;
+   int lastOffset;
+
    // OPTIONAL: you may add variables to keep track of
    // the current line and/or reference when scanning the file
    short MAX_BIBLE = 66; // largest book in the Bible
+   const int MAX_CHAP = 150;  
+   const int MAX_VERSE = 176;
 
  public:
    Bible();	// Default constructor
@@ -52,5 +58,17 @@ class Bible {	// A class to represent a version of the bible
    Ref next(const Ref ref, LookupResult& status);
    // OPTIONAL: Return the reference before the given parameter ref
    Ref prev(const Ref ref, LookupResult& status);
+
+   // builds verse map using refs
+   int buildVerseIndex(string fileName);
+
+   // gets the number of references in the index
+   int getIndexSize() const;
+
+   // gets the byte offset of the last verse added to the index
+   int getLastOffset() const;
+
+   // gets the byte offset for a specific reference
+   int getOffset(const Ref& ref);
 };
 #endif //Bible_H

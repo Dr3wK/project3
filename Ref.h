@@ -27,15 +27,15 @@ public:
    Ref(const int, const int, const int);
    Ref(const int,const int,const int, const int); 	// Construct from three integers;
    // Accessors
-   int getBook();	// Access book number
-   int getChap();	// Access chapter number
-   int getVerse();	// Access verse number
+   int getBook() const;	// Access book number
+   int getChap() const;	// Access chapter number
+   int getVerse() const;	// Access verse number
    string getStrBookName(); // Access the string book name using map
    // REQUIRED Comparison: determine if two references are equal
    bool operator==(const Ref);
    // OPTIONAL: < and > comparisons for Ref objects might also be useful
-   bool operator<(const Ref);
-   bool operator>(const Ref);
+   bool operator<(const Ref&) const;
+   bool operator>(const Ref&) const;
    // REQUIRED: Display the reference on cout, example output: John 3:16
    void display();
    // Your version of display should show the book name

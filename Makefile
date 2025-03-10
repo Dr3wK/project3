@@ -19,7 +19,8 @@ USER= drekoning
 CC= g++
 CFLAGS= -g -std=c++11
 
-all: bibleajax.cgi PutCGI PutHTML
+all: bibleajax.cgi testReader 
+# PutCGI PutHTML
 
 # TO DO: For bibleajax.cgi, add dependencies to include
 # compiled classes from Project 1 to be linked into the executable program
@@ -41,22 +42,32 @@ Verse.o : Verse.h Verse.cpp
 	$(CC) $(CFLAGS) -c Verse.cpp
 
 Bible.o : Bible.h Bible.cpp
-	$(CC) $(CFLAGS) -c Bible.cpp        
+	$(CC) $(CFLAGS) -c Bible.cpp 
+	    
 
-PutCGI: bibleajax.cgi
-	chmod 755 bibleajax.cgi
-	cp bibleajax.cgi /var/www/html/class/csc3004/$(USER)/cgi-bin
+# Build the testReader executable
+testReader: testReader.o Ref.o Verse.o Bible.o
+	$(CC) $(CFLAGS) -o testReader testReader.o Ref.o Verse.o Bible.o
+	
+# Compile the testReader program
+testReader.o: Ref.h Verse.h Bible.h testReader.cpp
+	$(CC) $(CFLAGS) -c testReader.cpp
 
-	echo "Current contents of your cgi-bin directory: "
-	ls -l /var/www/html/class/csc3004/$(USER)/cgi-bin/
 
-PutHTML:
-	cp bibleajax.html /var/www/html/class/csc3004/$(USER)
+#PutCGI: bibleajax.cgi
+#	chmod 755 bibleajax.cgi
+#	cp bibleajax.cgi /var/www/html/class/csc3004/$(USER)/cgi-bin
 
-	echo "Current contents of your HTML directory: "
-	ls -l /var/www/html/class/csc3004/$(USER)
+#	echo "Current contents of your cgi-bin directory: "
+#	ls -l /var/www/html/class/csc3004/$(USER)/cgi-bin/
+
+#PutHTML:
+#	cp bibleajax.html /var/www/html/class/csc3004/$(USER)
+
+#	echo "Current contents of your HTML directory: "
+#	ls -l /var/www/html/class/csc3004/$(USER)
 
 clean:
-	rm *.o bibleajax.cgi
-	# rm *.o core bibleajax.cgi
+	rm *.o bibleajax.cgi testReader
+	# rm *.o core bibleajax.cg
 

@@ -10,186 +10,207 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <map>
 using namespace std;
 
 Bible::Bible() { // Default constructor
 	infile = "/home/class/csc3004/Bibles/web-complete";
+	
 }
 
 // Constructor – pass bible filename
-Bible::Bible(const string s) { infile = s; }
+Bible::Bible(const string s) { 
+	infile = s; 
+	
+}
+
+
+
+// REQUIRED: Return the next verse from the Bible file stream if the file is open.
+// If the file is not open, open the file and return the first verse.
+Verse Bible::nextVerse(LookupResult& status) { 
+	
+	status = OTHER; // Default status
+
+	if (!instream.is_open()) {
+		instream.open(infile, ios::in);
+		if (!instream.is_open()) {
+			cerr << "Error: Could not open file " << infile << endl;
+			status = OTHER;
+			return Verse();
+		}
+	}
+
+	string line;
+	if (getline(instream, line)) {
+		status = SUCCESS;
+		return Verse(line);
+	}
+
+	status = OTHER;
+	return Verse();
+}
+
+// REQUIRED: Return an error message string to describe status
+string Bible::error(const Ref ref, LookupResult status) {
+	
+	Ref tempRef = ref;
+
+	if (status == 1) {
+		return "Error: No such book " + to_string(tempRef.getBook());
+	}
+	if (status == 2) {
+		return "Error: No such chapter " + to_string(tempRef.getChap()) + " in " + tempRef.getStrBookName();
+	}
+	if (status == 3) {
+		return "Error: No such verse: " + to_string(tempRef.getVerse()) + " in " + tempRef.getStrBookName() + " " + to_string(tempRef.getChap());
+	}
+	else
+		return "Unknown Error has occurred";
+}
+
+
+
+// OPTIONAL access functions
+// OPTIONAL: Return the reference after the given ref
+Ref Bible::next(const Ref ref, LookupResult& status) { 
+	status = OTHER; // Default status
+
+	// Find the current reference in the index
+	auto it = BibleRefs.find(ref);
+	if (it == BibleRefs.end()) {
+		status = NO_VERSE; // Reference not found
+		return Ref();
+	}
+
+	// Move to the next reference in the index
+	++it;
+	if (it == BibleRefs.end()) {
+		status = NO_VERSE; // No next verse
+		return Ref();
+	}
+
+	status = SUCCESS;
+	return it->first; // Return the next Ref
+}
+
+	// OPTIONAL: Return the reference before the given ref
+Ref Bible::prev(const Ref ref, LookupResult &status) {
+    // Check for the first verse
+    if (ref.getBook() == 1 && ref.getChap() == 1 && ref.getVerse() == 1) {
+        status = NO_VERSE;  // No previous verse exists
+        return Ref();
+    }
+
+    if (ref.getVerse() > 1) {
+        // Previous verse in the same chapter
+        return Ref(ref.getBook(), ref.getChap(), ref.getVerse() - 1);
+    } else if (ref.getChap() > 1) {
+        // Last verse of the previous chapter
+        Ref lastVerseInPrevChap(ref.getBook(), ref.getChap() - 1, MAX_VERSE);
+        if (BibleRefs.find(lastVerseInPrevChap) != BibleRefs.end()) {
+            return lastVerseInPrevChap;
+        }
+    } else if (ref.getBook() > 1) {
+        // Last chapter and verse of the previous book
+        Ref lastVerseInPrevBook(ref.getBook() - 1, MAX_CHAP, MAX_VERSE);
+        if (BibleRefs.find(lastVerseInPrevBook) != BibleRefs.end()) {
+            return lastVerseInPrevBook;
+        }
+    }
+
+    status = NO_VERSE;
+    return Ref();
+}
 
 // REQUIRED: lookup finds a given verse in this Bible
 Verse Bible::lookup(Ref ref, LookupResult& status) {
+	status = OTHER;  // Placeholder status
 
-	string line;
+	// Check if the reference exists in the index
+	if (BibleRefs.find(ref) == BibleRefs.end()) {
+		status = NO_VERSE;  // Reference not found
+		return Verse();
+	}
 
-	// default verse
-	Verse tempVerse;
-
-	status = OTHER; // placeholder until retrieval is attempted
-	instream.open(infile, ios::in);
-
-	// Check to see if file is open
 	if (!instream.is_open()) {
-		cout << "Error, can't open input file: " << infile << endl;
-		return tempVerse;
-	}
-
-	// Book out of bounds
-	if (ref.getBook() < 1 || ref.getBook() > MAX_BIBLE) {
-		status = NO_BOOK;
-		cout << error(ref, status) << endl;
-		return tempVerse;
-	}
-
-	// Initialize the max chapter and verse numbers for the given book
-	short maxChap = 0, maxVerse = 0;
-	while (getline(instream, line)) {
-		// Find the first space separating reference and verse text
-		int firstSpacePos = line.find_first_of(' ');
-		// Create substring with remaining text after initial space
-		string verseText = line.substr(0, firstSpacePos); //could possibly work now
-
-		string strbook = GetNextToken(verseText, ":");
-		short book = atoi(strbook.c_str());
-		// Get the chapter number
-		string strchap = GetNextToken(verseText, ":");
-		short chap = atoi(strchap.c_str());
-		// Get the verse number
-		string strverse = GetNextToken(verseText, " ");
-		short verseNum = atoi(strverse.c_str());
-
-		// Set the max chapter and verse for each book for error handling
-		if (ref.getBook() == book) {
-			if (chap > maxChap) { maxChap = chap; }
-			if (chap == ref.getChap() && verseNum > maxVerse) { maxVerse = verseNum; }
+		instream.open(infile, ios::in);
+		if (!instream.is_open()) {
+			cerr << "Error: Cannot open input file: " << infile << endl;
+			status = OTHER;
+			return Verse();
 		}
-		if (book > ref.getBook()) 
-			break;  // break if we pass book
 	}
 
-	// Check for chapter out of bounds
-	if (ref.getChap() < 1 || ref.getChap() > maxChap) {
-		status = NO_CHAPTER;
-		cout << error(ref, status) << endl;
-		return tempVerse;
+	// Seek to the correct offset
+	instream.clear();
+	int offset = BibleRefs[ref];
+	instream.seekg(offset);
+	cout << "Pointer after seekg for Ref: " << instream.tellg() << endl;
+
+	// Validate and adjust the pointer if necessary
+	char ch = instream.peek();
+	if (!isprint(ch) && ch != '\n') {
+		cout << "Skipping invalid character at offset: " << offset << endl;
+		instream.get();  // Consume invalid character
 	}
 
-	// Check for verse out of bounds
-	if (ref.getVerse() < 1 || ref.getVerse() > maxVerse) {
-		status = NO_VERSE;
-		cout << error(ref, status) << endl;
-		return tempVerse;
+	// Read the line
+	string line;
+	if (getline(instream, line)) {
+		cout << "Pointer after getline: " << instream.tellg() << endl;
+		status = SUCCESS;
+		return Verse(line);
 	}
-	
 
-	// Reset stream to beginning to find the actual verse
-	instream.close();
-	instream.open(infile, ios::in);
-
-	if (instream.is_open()) {
-		while (getline(instream, line)) {
-			// Find the first space separating reference and verse text
-			int firstSpacePos = line.find_first_of(' ');
-			// Create substring with remaining text after initial space
-			string verseText = line.substr(0, firstSpacePos); //could possibly work now
-
-			string strbook = GetNextToken(verseText, ":");
-			short book = atoi(strbook.c_str());
-			// Get the chapter number
-			string strchap = GetNextToken(verseText, ":");
-			short chap = atoi(strchap.c_str());
-			// Get the verse number
-			string strverse = GetNextToken(verseText, " ");
-			short verseNum = atoi(strverse.c_str());
-
-			Ref compRef = Ref(book, chap, verseNum, 1);
-			if (compRef == ref) {
-				tempVerse = Verse(line);
-				status = SUCCESS;
-				break;
-			}
-		}
-		
-	}
-	return tempVerse;
+	// Handle read failure
+	cerr << "Error: Could not retrieve verse at offset " << offset << endl;
+	status = OTHER;
+	return Verse();
 }
 
-	// REQUIRED: Return the next verse from the Bible file stream if the file is open.
-	// If the file is not open, open the file and return the first verse.
-	Verse Bible::nextVerse(LookupResult& status) { 
-		
-		string line;
-		Verse tempVerse;
-		
-		status = OTHER; // placeholder until retrieval is attempted
+int Bible::buildVerseIndex(string fileName) {
+	ifstream infile;
+	int position;
+	string line;
 
-		if (!instream.is_open()) {
-			cout << "Error, can't open input file: " << infile << endl;
-			return tempVerse;
-		}
-		
-		if (getline(instream, line)) {
-	
-			// Find the first space separating reference and verse text
-			int firstSpacePos = line.find_first_of(' ');
-			// Create substring with remaining text after initial space
-			string verseText = line.substr(0, firstSpacePos); //could possibly work now
-			tempVerse = Verse(line);
-		}
-		else {
-			tempVerse = Verse();
-		}
-		return tempVerse;
+	infile.open(fileName.c_str(), ios::in);
+	if (!infile) {
+		cerr << "Error: Could not open file " << fileName << endl;
+		return 0;
 	}
 
-	// REQUIRED: Return an error message string to describe status
-	string Bible::error(const Ref ref, LookupResult status) {
-	
-		Ref tempRef = ref;
-
-		if (status == 1) {
-			return "Error: No such book " + to_string(tempRef.getBook());
-		}
-		if (status == 2) {
-			return "Error: No such chapter " + to_string(tempRef.getChap()) + " in " + tempRef.getStrBookName();
-		}
-		if (status == 3) {
-			return "Error: No such verse: " + to_string(tempRef.getVerse()) + " in " + tempRef.getStrBookName() + " " + to_string(tempRef.getChap());
-		}
-		else
-			return "Unknown Error has occurred";
+	while (true) {
+		position = infile.tellg();  // Capture the position BEFORE reading the line
+		if (!getline(infile, line)) break;  // Read the line
+		Ref ref(line);  // Create a reference from the line
+		BibleRefs[ref] = position;  // Store the starting position of the verse
+		lastOffset = position;  // Update the last offset
 	}
 
-	void Bible::display() {
-		cout << "Bible file: " << infile << endl;
+	infile.close();
+	return 1;
+}
+
+// Get the number of references in the index
+int Bible::getIndexSize() const {
+	return BibleRefs.size();
+}
+
+// Get the byte offset of the last verse added to the index
+int Bible::getLastOffset() const {
+	return lastOffset;
+}
+
+// Get the byte offset for a specific reference
+int Bible::getOffset(const Ref& ref) {
+	if (BibleRefs.find(ref) != BibleRefs.end()) {
+		return BibleRefs[ref];
 	}
+	return -1; // Return -1 if the reference is not found
+}
 
-	// OPTIONAL access functions
-	// OPTIONAL: Return the reference after the given ref
-	Ref Bible::next(const Ref ref, LookupResult& status) { 
-		Ref tempRef = ref;
+void Bible::display() {
+	cout << "Bible file: " << infile << endl;
+}
 
-		short verseNum = tempRef.getVerse() + 1;
-		Ref nextRef = Ref(tempRef.getBook(), tempRef.getChap(), verseNum);
-
-		return nextRef;
-	}
-
-	// OPTIONAL: Return the reference before the given ref
-	Ref Bible::prev(const Ref ref, LookupResult & status) {
-		Ref tempRef = ref;
-		
-		//previous verse num
-		short verseNum = tempRef.getVerse() - 1;
-		if (verseNum <= 0) 
-		{
-			// Error no verse exists
-			status = NO_VERSE;
-		}
-
-		Ref prevRef = Ref(tempRef.getBook(), tempRef.getChap(), verseNum);
-
-		return prevRef;
-	}
