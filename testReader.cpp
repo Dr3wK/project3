@@ -20,19 +20,18 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Diagnostic output for program demonstration
-    cout << "Index built successfully." << endl;
+    // Required diagnostic output for program demonstration
     cout << "Number of references in index: " << webBible.getIndexSize() << endl;
     cout << "Byte offset of the last verse added to the index: " << webBible.getLastOffset() << endl;
 
     // Print the byte offset of specific references
     Ref ref1(1, 1, 1);  // Genesis 1:1
     Ref ref2(1, 1, 2);  // Genesis 1:2
-    Ref ref3(1, 1, 3);  // Genesis 1:3
-
+    Ref ref3(66, 1, 3);  // Revelation 1:3
+ 
     cout << "Byte offset for Genesis 1:1: " << webBible.getOffset(ref1) << endl;
     cout << "Byte offset for Genesis 1:2: " << webBible.getOffset(ref2) << endl;
-    cout << "Byte offset for Genesis 1:3: " << webBible.getOffset(ref3) << endl;
+    cout << "Byte offset for Revelation 1:3: " << webBible.getOffset(ref3) << endl;
 
     // Check command line arguments
     if (argc > 5) {
@@ -52,7 +51,7 @@ int main(int argc, char* argv[]) {
         amountVerses = atoi(argv[4]);
     }
 
-    // Create a reference from the numbers
+    // Create a reference from the numbers to look up
     Ref ref(bookNum, chapterNum, startingVerseNum, amountVerses);
 
     // Use the Bible object to retrieve the verse by reference
@@ -60,9 +59,8 @@ int main(int argc, char* argv[]) {
     Verse verse = webBible.lookup(ref, result);
 
     if (result == 0) {
-        cout << ref.getStrBookName() << " " << ref.getChap() << endl;
-
         // Display the verse if the verse was successfully found.
+        cout << ref.getStrBookName() << " " << ref.getChap() << endl;
         verse.display();
     }
 

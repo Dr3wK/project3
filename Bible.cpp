@@ -13,7 +13,8 @@
 #include <map>
 using namespace std;
 
-Bible::Bible() { // Default constructor
+Bible::Bible() { 
+	// Default constructor
 	infile = "/home/class/csc3004/Bibles/web-complete";
 	
 }
@@ -24,14 +25,11 @@ Bible::Bible(const string s) {
 	
 }
 
-
-
 // REQUIRED: Return the next verse from the Bible file stream if the file is open.
 // If the file is not open, open the file and return the first verse.
 Verse Bible::nextVerse(LookupResult& status) { 
 	
 	status = OTHER; // Default status
-
 	if (!instream.is_open()) {
 		instream.open(infile, ios::in);
 		if (!instream.is_open()) {
@@ -40,13 +38,12 @@ Verse Bible::nextVerse(LookupResult& status) {
 			return Verse();
 		}
 	}
-
 	string line;
 	if (getline(instream, line)) {
 		status = SUCCESS;
 		return Verse(line);
 	}
-
+	// Default output if end of file and file not open
 	status = OTHER;
 	return Verse();
 }
@@ -74,45 +71,58 @@ string Bible::error(const Ref ref, LookupResult status) {
 // OPTIONAL access functions
 // OPTIONAL: Return the reference after the given ref
 Ref Bible::next(const Ref ref, LookupResult& status) { 
-	status = OTHER; // Default status
+	  
+	// Check if the reference exists in the index
+	if (BibleRefs.find(ref) == BibleRefs.end()) {
+		status = NO_VERSE; // Reference not found in the index
+		return Ref();
+	}
 
-	// Find the current reference in the index
-	auto it = BibleRefs.find(ref);
-	if (it == BibleRefs.end()) {
-		status = NO_VERSE; // Reference not found
+	// find the reference in the index
+	// find what type of iterator
+	auto iter = BibleRefs.find(ref);
+	if (iter == BibleRefs.end()) {
+		cerr << "Error: Reference not found in BibleRefs." << endl;
+		status = NO_VERSE;
 		return Ref();
 	}
 
 	// Move to the next reference in the index
-	++it;
-	if (it == BibleRefs.end()) {
-		status = NO_VERSE; // No next verse
+	++iter;
+	if (iter == BibleRefs.end()) {
+		cerr << "Error: No next verse exists for the provided reference." << endl;
+		status = NO_VERSE;
 		return Ref();
 	}
 
+	// Return the next reference
 	status = SUCCESS;
-	return it->first; // Return the next Ref
+	return iter->first;
 }
 
 	// OPTIONAL: Return the reference before the given ref
 Ref Bible::prev(const Ref ref, LookupResult &status) {
-    // Check for the first verse
+
+    // Check to see if first verse
     if (ref.getBook() == 1 && ref.getChap() == 1 && ref.getVerse() == 1) {
         status = NO_VERSE;  // No previous verse exists
         return Ref();
     }
 
-    if (ref.getVerse() > 1) {
-        // Previous verse in the same chapter
+    if (ref.getVerse() > 1) { // Previous verse in the same chapter
+        
         return Ref(ref.getBook(), ref.getChap(), ref.getVerse() - 1);
-    } else if (ref.getChap() > 1) {
-        // Last verse of the previous chapter
+    } 
+	else if (ref.getChap() > 1) { // Last verse of the previous chapter
+        
         Ref lastVerseInPrevChap(ref.getBook(), ref.getChap() - 1, MAX_VERSE);
         if (BibleRefs.find(lastVerseInPrevChap) != BibleRefs.end()) {
             return lastVerseInPrevChap;
         }
-    } else if (ref.getBook() > 1) {
-        // Last chapter and verse of the previous book
+
+    } 
+	else if (ref.getBook() > 1) { // Last chapter and verse of the previous book
+        
         Ref lastVerseInPrevBook(ref.getBook() - 1, MAX_CHAP, MAX_VERSE);
         if (BibleRefs.find(lastVerseInPrevBook) != BibleRefs.end()) {
             return lastVerseInPrevBook;
@@ -127,12 +137,13 @@ Ref Bible::prev(const Ref ref, LookupResult &status) {
 Verse Bible::lookup(Ref ref, LookupResult& status) {
 	status = OTHER;  // Placeholder status
 
-	// Check if the reference exists in the index
+	// Check if the reference is in the index
 	if (BibleRefs.find(ref) == BibleRefs.end()) {
 		status = NO_VERSE;  // Reference not found
 		return Verse();
 	}
 
+	// If instream not yet open, open it
 	if (!instream.is_open()) {
 		instream.open(infile, ios::in);
 		if (!instream.is_open()) {
@@ -147,13 +158,6 @@ Verse Bible::lookup(Ref ref, LookupResult& status) {
 	int offset = BibleRefs[ref];
 	instream.seekg(offset);
 	cout << "Pointer after seekg for Ref: " << instream.tellg() << endl;
-
-	// Validate and adjust the pointer if necessary
-	char ch = instream.peek();
-	if (!isprint(ch) && ch != '\n') {
-		cout << "Skipping invalid character at offset: " << offset << endl;
-		instream.get();  // Consume invalid character
-	}
 
 	// Read the line
 	string line;
@@ -174,6 +178,7 @@ int Bible::buildVerseIndex(string fileName) {
 	int position;
 	string line;
 
+	// Open the file
 	infile.open(fileName.c_str(), ios::in);
 	if (!infile) {
 		cerr << "Error: Could not open file " << fileName << endl;
@@ -192,6 +197,8 @@ int Bible::buildVerseIndex(string fileName) {
 	return 1;
 }
 
+
+// Methods for diagnostic data
 // Get the number of references in the index
 int Bible::getIndexSize() const {
 	return BibleRefs.size();
