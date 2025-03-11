@@ -45,11 +45,15 @@ Bible.o : Bible.h Bible.cpp
 	$(CC) $(CFLAGS) -c Bible.cpp 
 	    
 
-# Build the testReader executable
+# Build fifo.o
+fifo.o : fifo.h fifo.cpp
+	$(CC) $(CFLAGS) -c fifo.cpp
+
+# Build testReader 
 testReader: testReader.o Ref.o Verse.o Bible.o
 	$(CC) $(CFLAGS) -o testReader testReader.o Ref.o Verse.o Bible.o
 	
-# Compile the testReader program
+# Compile testReader
 testReader.o: Ref.h Verse.h Bible.h testReader.cpp
 	$(CC) $(CFLAGS) -c testReader.cpp
 

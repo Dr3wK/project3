@@ -16,13 +16,23 @@ using namespace std;
 Bible::Bible() { 
 	// Default constructor
 	infile = "/home/class/csc3004/Bibles/web-complete";
-	
+
+	// Build map index
+	int indexResult = buildVerseIndex("/home/class/csc3004/Bibles/web-complete");
+	if (indexResult == 0) {
+		cerr << "Error building index." << endl;
+	}
 }
 
 // Constructor – pass bible filename
 Bible::Bible(const string s) { 
 	infile = s; 
-	
+
+	// Build map index
+	int indexResult = buildVerseIndex("/home/class/csc3004/Bibles/web-complete");
+	if (indexResult == 0) {
+		cerr << "Error building index." << endl;
+	}
 }
 
 // REQUIRED: Return the next verse from the Bible file stream if the file is open.
@@ -187,7 +197,7 @@ int Bible::buildVerseIndex(string fileName) {
 
 	while (true) {
 		position = infile.tellg();  // Capture the position BEFORE reading the line
-		if (!getline(infile, line)) break;  // Read the line
+		if (!getline(infile, line)) break;  // Read the line check for end of file
 		Ref ref(line);  // Create a reference from the line
 		BibleRefs[ref] = position;  // Store the starting position of the verse
 		lastOffset = position;  // Update the last offset

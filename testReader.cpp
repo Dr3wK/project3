@@ -13,13 +13,6 @@ int main(int argc, char* argv[]) {
     // Create Bible object to process the raw text file
     Bible webBible("/home/class/csc3004/Bibles/web-complete");
 
-    // Build the index
-    int indexResult = webBible.buildVerseIndex("/home/class/csc3004/Bibles/web-complete");
-    if (indexResult == 0) {
-        cerr << "Error building index." << endl;
-        return 1;
-    }
-
     // Required diagnostic output for program demonstration
     cout << "Number of references in index: " << webBible.getIndexSize() << endl;
     cout << "Byte offset of the last verse added to the index: " << webBible.getLastOffset() << endl;
