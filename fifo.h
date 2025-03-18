@@ -32,7 +32,7 @@ using namespace std;
 // PATH changed from /tmp to special class directory for improved web security
 // TODO figure out correct path
 
-const string PATH  = "/home/class/csc3004/tmp/drekoning_BL";
+const string PATH  = "/home/class/csc3004/tmp/";
 
 // SIGniture assures the pipe is unique amoung users
 const string SIG = "drekoning_";
