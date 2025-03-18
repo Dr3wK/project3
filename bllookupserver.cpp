@@ -45,25 +45,46 @@ int main() {
         // Receive a request from the client
         string request = recfifo.recv();
         cout << "Received request: " << request << endl;
-        
-        // Parse request into a Ref object
-        Ref ref(request);
-        LookupResult status;
-        Verse verse = webBible.lookup(ref, status);
+        // TODO: Parse first 3 chars uding colon as delimiter
+        // Get book number
+        string strbook = GetNextToken(request, ":");
+        int intbook = stoi(strbook);
 
-        // Prepare response
-        string response = request;
-        /*if (status == SUCCESS) {
-            response = verse.getVerse();
+        // Get the chapter number
+        string strchap = GetNextToken(request, ":");
+        int intchap = stoi(strchap);
+
+        // Get the verse number
+        string strverse = GetNextToken(request, " ");
+        int intverse = stoi(strverse);
+
+        // IF in format <Book>:<Chapter>:<Verse> Print verse, else print err
+        if (intbook > 0 && intbook < 67 &&
+            intchap > 0 && intchap < 151 &&
+            intverse > 0 && intverse < 200) {
+            // Parse request into a Ref object
+            Ref ref(request);
+            LookupResult status;
+            Verse verse = webBible.lookup(ref, status);
+
+            // Prepare response
+            string response = request;
+            if (status == SUCCESS) {
+                // Send verse refernce, verse number, and verse text
+                response = ref.getStrBookName() + " " + to_string(ref.getChap()) +
+                    "\n" + to_string(ref.getVerse()) + " " + verse.getVerse();
+            }
+            else {
+                response = webBible.error(ref, status);
+            }
+
+            // Send response back to the client
+            sendfifo.send(response);
+            cout << "Sent reply: " << response << endl;
         }
         else {
-            response = webBible.error(ref, status);
+            sendfifo.send("Err: incorrect format");
         }
-        */
-
-        // Send response back to the client
-        sendfifo.send(response);
-        cout << "Sent reply: " << response << endl;
     }
 
     recfifo.fifoclose();
