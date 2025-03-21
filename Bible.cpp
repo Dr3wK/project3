@@ -70,6 +70,11 @@ string Bible::error(const Ref ref, LookupResult status) {
 		return "Error: No such chapter " + to_string(tempRef.getChap()) + " in " + tempRef.getStrBookName();
 	}
 	if (status == 3) {
+		
+		Ref emptyRef(0, 0, 0, 0); //Default constructor creates empty ref, if invalid input
+		if (tempRef == emptyRef) {
+			return "Error: Invalid input";
+		}
 		return "Error: No such verse: " + to_string(tempRef.getVerse()) + " in " + tempRef.getStrBookName() + " " + to_string(tempRef.getChap());
 	}
 	else
@@ -83,16 +88,10 @@ string Bible::error(const Ref ref, LookupResult status) {
 Ref Bible::next(const Ref ref, LookupResult& status) { 
 	  
 	// Check if the reference exists in the index
-	if (BibleRefs.find(ref) == BibleRefs.end()) {
-		status = NO_VERSE; // Reference not found in the index
-		return Ref();
-	}
-
-	// find the reference in the index
-	// find what type of iterator
 	auto iter = BibleRefs.find(ref);
 	if (iter == BibleRefs.end()) {
-		cerr << "Error: Reference not found in BibleRefs." << endl;
+		cerr << "Error: Reference not found in BibleRefs: "
+			<< ref.getBook() << ":" << ref.getChap() << ":" << ref.getVerse() << endl;
 		status = NO_VERSE;
 		return Ref();
 	}
@@ -100,10 +99,14 @@ Ref Bible::next(const Ref ref, LookupResult& status) {
 	// Move to the next reference in the index
 	++iter;
 	if (iter == BibleRefs.end()) {
-		cerr << "Error: No next verse exists for the provided reference." << endl;
+		cerr << "Error: No next reference exists after "
+			<< ref.getBook() << ":" << ref.getChap() << ":" << ref.getVerse() << endl;
 		status = NO_VERSE;
 		return Ref();
 	}
+
+	// Debugging: Log the next reference
+	cerr << "Next Reference: " << iter->first.getBook() << ":" << iter->first.getChap() << ":" << iter->first.getVerse() << endl;
 
 	// Return the next reference
 	status = SUCCESS;
@@ -147,8 +150,10 @@ Ref Bible::prev(const Ref ref, LookupResult &status) {
 Verse Bible::lookup(Ref ref, LookupResult& status) {
 	status = OTHER;  // Placeholder status
 
+	
 	// Check if the reference is in the index
 	if (BibleRefs.find(ref) == BibleRefs.end()) {
+		cout << "here!" << endl;
 		status = NO_VERSE;  // Reference not found
 		return Verse();
 	}

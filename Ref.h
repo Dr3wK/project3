@@ -22,14 +22,16 @@ private:
 	short book, chap, verse, numOfVerses;	// Reference information
 
 public:
-   Ref();  	// Default constructor
-   Ref(string s); 	// Parse constructor - example parameter "43:3:16"
-   Ref(const int, const int, const int);
-   Ref(const int,const int,const int, const int); 	// Construct from three integers;
-   // Accessors
-   int getBook() const;	// Access book number
-   int getChap() const;	// Access chapter number
-   int getVerse() const;	// Access verse number
+	Ref();  	// Default constructor
+	Ref(string s); 	// Parse constructor - example parameter "43:3:16"
+	Ref(const int, const int, const int);
+	Ref(const int, const int, const int, const int); 	// Construct from three integers;
+	// Accessors
+	int getBook() const;	// Access book number
+	int getChap() const;	// Access chapter number
+	int getVerse() const;   // Access verse number
+	int getAmountVerses() const;
+
    string getStrBookName(); // Access the string book name using map
    // REQUIRED Comparison: determine if two references are equal
    bool operator==(const Ref);
@@ -40,7 +42,7 @@ public:
    void display();
    // Your version of display should show the book name
    // corresponding to the stored book number.
-
+   string getRefLine();
    
 };
 

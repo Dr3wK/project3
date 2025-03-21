@@ -15,6 +15,8 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <cctype>
+
 
 #include <map>
 #include "fifo.h"
@@ -38,56 +40,72 @@ int main() {
     Fifo recfifo(receive_pipe);
     Fifo sendfifo(send_pipe);
 
-    recfifo.openread();
-    sendfifo.openwrite();
+    
 
     while (true) {
+
+        recfifo.openread();
+        sendfifo.openwrite();
         // Receive a request from the client
         string request = recfifo.recv();
         cout << "Received request: " << request << endl;
-        // TODO: Parse first 3 chars uding colon as delimiter
-        // Get book number
-        string strbook = GetNextToken(request, ":");
-        int intbook = stoi(strbook);
+        
+        string bookStr, chapterStr, verseStr, numVersesStr;
+        istringstream stream(request);
+        getline(stream, bookStr, ':');
+        getline(stream, chapterStr, ':');
+        getline(stream, verseStr, ' ');
+        getline(stream, numVersesStr); 
 
-        // Get the chapter number
-        string strchap = GetNextToken(request, ":");
-        int intchap = stoi(strchap);
-
-        // Get the verse number
-        string strverse = GetNextToken(request, " ");
-        int intverse = stoi(strverse);
-
-        // IF in format <Book>:<Chapter>:<Verse> Print verse, else print err
-        if (intbook > 0 && intbook < 67 &&
-            intchap > 0 && intchap < 151 &&
-            intverse > 0 && intverse < 200) {
-            // Parse request into a Ref object
-            Ref ref(request);
-            LookupResult status;
-            Verse verse = webBible.lookup(ref, status);
-
-            // Prepare response
-            string response = request;
-            if (status == SUCCESS) {
-                // Send verse refernce, verse number, and verse text
-                response = ref.getStrBookName() + " " + to_string(ref.getChap()) +
-                    "\n" + to_string(ref.getVerse()) + " " + verse.getVerse();
-            }
-            else {
-                response = webBible.error(ref, status);
-            }
-
-            // Send response back to the client
-            sendfifo.send(response);
-            cout << "Sent reply: " << response << endl;
+        // Default number of verses to 1 if not specified
+        int numOfVerses;
+        if (numVersesStr.empty()) {
+            numOfVerses = 1;
         }
         else {
-            sendfifo.send("Err: incorrect format");
+            numOfVerses = stoi(numVersesStr);
         }
-    }
 
-    recfifo.fifoclose();
-    sendfifo.fifoclose();
+        // Convert the parsed strings to integers
+        int bookNum = stoi(bookStr);
+        int chapterNum = stoi(chapterStr);
+        int verseNum = stoi(verseStr);
+
+        // Catch empty reference
+        if (bookStr.empty() || chapterStr.empty() || verseStr.empty() || !isdigit(bookStr[0])) {
+            sendfifo.send("Error: Invalid input format. Expected format is <book>:<chapter>:<verse> <number of verses>");
+            continue;
+        }
+
+        // Create a Ref object using the four-argument constructor
+        Ref ref(bookNum, chapterNum, verseNum, numOfVerses);
+        LookupResult status;
+        Verse verse = webBible.lookup(ref, status);
+
+        if (status == SUCCESS) {
+            string response = ref.getStrBookName() + " " + to_string(ref.getChap()) + "\n";
+
+            // Retrieve and concatenate multiple verses in repsonce
+            for (int i = 0; i < numOfVerses; ++i) {
+                cout << to_string(ref.getAmountVerses()) << endl;
+                verse = webBible.lookup(ref, status);
+                cout << status << endl;
+                if (status != SUCCESS) { break; }
+
+                response += to_string(ref.getVerse()) + " " + verse.getVerse() + "\n"; // ref.getVerse() returns verse number
+                                                                                       // verse.getVerse() returns the verse text
+                ref = webBible.next(ref, status); // Move to the next verse
+            }
+            sendfifo.send(response);
+        }
+        else {
+            // Send error through pipe
+            sendfifo.send(webBible.error(ref, status));
+        }
+
+            recfifo.fifoclose();
+            sendfifo.fifoclose();
+    }
+    
     return 0;
 }

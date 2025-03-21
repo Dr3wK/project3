@@ -43,7 +43,10 @@ Ref::Ref(const string s) { // Parse constructor - receives a line "34:5:7 text"
     // Get the verse number
     string strverse = GetNextToken(rtext," ");
     verse = atoi(strverse.c_str());
-    numOfVerses = 1;
+  
+    numOfVerses = 1; // Default to 1 
+   
+
 }
 
 // Construct Ref from three ints
@@ -66,6 +69,7 @@ Ref::Ref(const int bookNum, const int chapterNum, const int startingVerseNum, co
 int Ref::getBook() const {return book;}	 // Access book number
 int Ref::getChap() const {return chap;}	 // Access chapter number
 int Ref::getVerse() const {return verse;} // Access verse number
+int Ref::getAmountVerses() const { return numOfVerses; } // Access verse number
 
 
 // REQUIRED: == comparison
@@ -76,19 +80,16 @@ bool Ref::operator==(const Ref r) {
 }
 
 // OPTIONAL: define < and > comparisons
-bool Ref::operator<(const Ref& r) const { 
-    Ref compareBook = r;
-    if (compareBook.getBook() < book) return true;
-    if (compareBook.getBook() == book && compareBook.getChap() < chap) return true;
-    if (compareBook.getBook() == book && compareBook.getChap() == chap && compareBook.getVerse() < verse) return true;
-    return false;
+bool Ref::operator<(const Ref& r) const {
+    if (book != r.book) return book < r.book;
+    if (chap != r.chap) return chap < r.chap;
+    return verse < r.verse;
 }
 
 bool Ref::operator>(const Ref& r) const { 
-    Ref compareBook = r;
-    if (compareBook.getBook() > book) return true;
-    if (compareBook.getBook() == book && compareBook.getChap() > chap) return true;
-    if (compareBook.getBook() == book && compareBook.getChap() == chap && compareBook.getVerse() > verse) return true;
+    if (book > r.book) return true;
+    if (book == r.book && chap > r.chap) return true;
+    if (book == r.book && chap == r.chap && verse > r.verse) return true;
     return false;
 }
 // Accessor to use map to get string name of book
@@ -180,4 +181,15 @@ void Ref::display() { 	// Display Reference
         cout << getStrBookName() << " " << chap << ":" << verse;
     }
 	
+}
+
+string Ref::getRefLine() { 	// Display Reference
+
+    if (numOfVerses > 1) {
+        return getStrBookName() + " " + to_string(chap);
+    }
+    else {
+        return getStrBookName() + " " + to_string(chap) + ":" + to_string(verse);
+    }
+
 }

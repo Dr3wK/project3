@@ -62,7 +62,6 @@ int main() {
         response = recfifo.recv();
     }
 
-    recfifo.fifoclose();
-    sendfifo.fifoclose();
+    
     return 0;
 }

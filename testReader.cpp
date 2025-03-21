@@ -52,16 +52,19 @@ int main(int argc, char* argv[]) {
     Verse verse = webBible.lookup(ref, result);
 
     if (result == 0) {
+        cout << "Here" << endl;
         // Display the verse if the verse was successfully found.
         cout << ref.getStrBookName() << " " << ref.getChap() << endl;
         verse.display();
     }
 
     if (amountVerses > 1 && result == 0) {
+        
         for (int i = 0; i < amountVerses - 1; i++) {
             // Set verse object to the next verse
             verse = webBible.nextVerse(result);
-
+             
+            
             // Check to see if it is a new chapter, if it is print the new reference
             Ref tempRef = verse.getRef();
             if (tempRef.getVerse() == 1) {
