@@ -54,7 +54,7 @@ int main() {
         istringstream stream(request);
         getline(stream, bookStr, ':');
         getline(stream, chapterStr, ':');
-        getline(stream, verseStr, ' ');
+        getline(stream, verseStr, ':');
         getline(stream, numVersesStr); 
 
         // Default number of verses to 1 if not specified
