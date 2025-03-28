@@ -105,9 +105,6 @@ Ref Bible::next(const Ref ref, LookupResult& status) {
 		return Ref();
 	}
 
-	// Debugging: Log the next reference
-	cerr << "Next Reference: " << iter->first.getBook() << ":" << iter->first.getChap() << ":" << iter->first.getVerse() << endl;
-
 	// Return the next reference
 	status = SUCCESS;
 	return iter->first;
@@ -153,7 +150,6 @@ Verse Bible::lookup(Ref ref, LookupResult& status) {
 	
 	// Check if the reference is in the index
 	if (BibleRefs.find(ref) == BibleRefs.end()) {
-		cout << "here!" << endl;
 		status = NO_VERSE;  // Reference not found
 		return Verse();
 	}
@@ -168,22 +164,16 @@ Verse Bible::lookup(Ref ref, LookupResult& status) {
 		}
 	}
 
-	// Seek to the correct offset
-	instream.clear();
-	int offset = BibleRefs[ref];
-	instream.seekg(offset);
-	cout << "Pointer after seekg for Ref: " << instream.tellg() << endl;
-
-	// Read the line
+	instream.clear(); // Clear any error flags
+	instream.seekg(BibleRefs[ref], ios::beg); // Seek to the stored offset
 	string line;
 	if (getline(instream, line)) {
-		cout << "Pointer after getline: " << instream.tellg() << endl;
 		status = SUCCESS;
-		return Verse(line);
+		return Verse(line); // Parse and return the verse
 	}
 
-	// Handle read failure
-	cerr << "Error: Could not retrieve verse at offset " << offset << endl;
+	// If we get here, reading failed
+	cerr << "Error: Could not read verse at offset " << BibleRefs[ref] << endl;
 	status = OTHER;
 	return Verse();
 }

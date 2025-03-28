@@ -178,7 +178,7 @@ void Ref::display() { 	// Display Reference
         cout << getStrBookName() << " " << chap;
     }
     else {
-        cout << getStrBookName() << " " << chap << ":" << verse;
+        cout << getStrBookName() << " " << chap << ":" << verse << endl;
     }
 	
 }

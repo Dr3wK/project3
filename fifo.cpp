@@ -28,10 +28,10 @@ Fifo::Fifo(string name){
   int result = mknod(pipename.c_str(),MODE | S_IFIFO, 0);
 
   if ((result == -1) && (errno != EEXIST)) {
-    cout << "Error creating pipe: " << name << endl;
+    //cout << "Error creating pipe: " << name << endl;
     return;
   }
-  cout << "Success creating pipe: " << name << endl;
+  //cout << "Success creating pipe: " << name << endl;
   fd = 0;
   return;
 

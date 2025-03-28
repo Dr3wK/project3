@@ -4,7 +4,7 @@
  * copyright : (C) 2009 by Jim Skon
  * modified by : Drew Koning 2025
  ***************************************************************************/
- 
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -23,7 +23,7 @@
 #include "Bible.h"
 
 
-// TODO return verse line as string
+ // TODO return verse line as string
 
 using namespace std;
 
@@ -40,8 +40,6 @@ int main() {
     Fifo recfifo(receive_pipe);
     Fifo sendfifo(send_pipe);
 
-    
-
     while (true) {
 
         recfifo.openread();
@@ -49,13 +47,15 @@ int main() {
         // Receive a request from the client
         string request = recfifo.recv();
         cout << "Received request: " << request << endl;
-        
+
         string bookStr, chapterStr, verseStr, numVersesStr;
         istringstream stream(request);
         getline(stream, bookStr, ':');
         getline(stream, chapterStr, ':');
         getline(stream, verseStr, ':');
-        getline(stream, numVersesStr); 
+        getline(stream, numVersesStr);
+
+        cout << "book: " << bookStr << " chapter: " << chapterStr << " verse: " << verseStr << " number of verses: " << numVersesStr << endl;
 
         // Default number of verses to 1 if not specified
         int numOfVerses;
@@ -72,40 +72,84 @@ int main() {
         int verseNum = stoi(verseStr);
 
         // Catch empty reference
-        if (bookStr.empty() || chapterStr.empty() || verseStr.empty() || !isdigit(bookStr[0])) {
-            sendfifo.send("Error: Invalid input format. Expected format is <book>:<chapter>:<verse> <number of verses>");
+        if (bookStr.empty() || chapterStr.empty() || verseStr.empty()) {
+            sendfifo.send("Error: Invalid input format. Expected format is <book>:<chapter>:<verse>:<number of verses>");
             continue;
         }
 
+        if (bookNum < 1 || chapterNum < 1 || verseNum < 1 || numOfVerses < 1) {
+            sendfifo.send("Error: Book, chapter, and verse must be positive numbers.");
+            continue;
+        }
+
+        recfifo.fifoclose();
+        sendfifo.fifoclose();
+
+        recfifo.openread();
+        sendfifo.openwrite();
+        
+        
         // Create a Ref object using the four-argument constructor
         Ref ref(bookNum, chapterNum, verseNum, numOfVerses);
         LookupResult status;
+        ref.display();
         Verse verse = webBible.lookup(ref, status);
+        
+        
 
         if (status == SUCCESS) {
-            string response = ref.getStrBookName() + " " + to_string(ref.getChap()) + "\n";
+            /*
+            // Send first verse with ferfernce header
+            Ref tempRef = verse.getRef();
+            string response = "<br>" + tempRef.getStrBookName() + " " + to_string(tempRef.getChap()) + "<br>" + response;
+            
 
-            // Retrieve and concatenate multiple verses in repsonce
+            verse = webBible.lookup(ref, status);
+            if (status != SUCCESS) {
+                string endMessage = "$end";
+                sendfifo.send(endMessage);
+            }
+            */
+            string response = to_string(ref.getVerse()) + " " + verse.getVerse();
+            sendfifo.send(response);
+            Ref ref = webBible.next(ref, status);
+
+            // Retrieve remaining verses and send
             for (int i = 0; i < numOfVerses; ++i) {
-                cout << to_string(ref.getAmountVerses()) << endl;
-                verse = webBible.lookup(ref, status);
-                cout << status << endl;
-                if (status != SUCCESS) { break; }
 
-                response += to_string(ref.getVerse()) + " " + verse.getVerse() + "\n"; // ref.getVerse() returns verse number
-                                                                                       // verse.getVerse() returns the verse text
+                verse = webBible.lookup(ref, status);
+                
+                // Diagnostic Data
+                cout << "Status: \'"<< status <<"\' 0 = SUCCESS, 1 = NO_BOOK, 2 = NO_CHAPTER, 3 = NO_VERSE, 4 = OTHER" << endl;
+                
+                if (status != SUCCESS) {
+                    string endMessage = "$end";
+                    sendfifo.send(endMessage);
+                    break;
+                }
+                response = to_string(ref.getVerse()) + " " + verse.getVerse(); // ref.getVerse() returns verse number
+
+                // Check to see if it is a new chapter, if it is print the new reference
+                Ref tempRef = verse.getRef();
+                if (tempRef.getVerse() == 1) {
+                    response = "<br>" + tempRef.getStrBookName() + " " + to_string(tempRef.getChap()) + "<br>" + response;
+                }
+                
+                sendfifo.send(response);
+
                 ref = webBible.next(ref, status); // Move to the next verse
             }
-            sendfifo.send(response);
+            
         }
         else {
             // Send error through pipe
             sendfifo.send(webBible.error(ref, status));
         }
+        string endMessage = "$end";
+        sendfifo.send(endMessage);
 
-            recfifo.fifoclose();
-            sendfifo.fifoclose();
+        recfifo.fifoclose();
+        sendfifo.fifoclose();
     }
-    
     return 0;
 }
