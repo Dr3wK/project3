@@ -83,22 +83,28 @@ int main() {
 
         if (chapterNum > 150) {
             cout << "<p>The chapter number (" << chapterNum << ") is too high.</p>";
+            return 1;
         }
         else if (chapterNum <= 0) {
             cout << "<p>The chapter must be a positive number.</p>";
+            return 1;
         }
         else if (verseNum <= 0) {
             cout << "<p>The verse must be a positive number.</p>";
+            return 1;
         }
         // largest chapter has 176 verses
         else if (verseNum > 176) {
             cout << "<p>The Verse number (" << verseNum << ") is too high.</p>";
+            return 1;
         }
         else if (numOfVerses <= 0) {
             cout << "<p>The number of verses must be a positive number.</p>";
+            return 1;
         }
         else if (bookNum >= 66 && chapterNum >= 22 && verseNum > 21){
             cout << "<p>No Verse exists after Revelation 22:21 </p>";
+            return 1;
         }
         else
             validInput = true;

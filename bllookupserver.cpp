@@ -88,9 +88,10 @@ int main() {
 
         // Create a Ref object using the four-argument constructor
         Ref ref(bookNum, chapterNum, verseNum, numOfVerses);
-        LookupResult status;
+        LookupResult status = SUCCESS;
         ref.display();
         Verse verse = webBible.lookup(ref, status);
+        cout << "Status: \'" << status << "\' 0 = SUCCESS, 1 = NO_BOOK, 2 = NO_CHAPTER, 3 = NO_VERSE, 4 = OTHER" << endl;
 
         recfifo.openread();
         sendfifo.openwrite();
