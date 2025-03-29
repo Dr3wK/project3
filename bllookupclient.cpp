@@ -114,13 +114,14 @@ int main() {
         cout << "<p>Error: Invalid input values (must be positive).</p>";
         return 1;
     }
+    // Build verse reference as string
     string searchString =  to_string(bookNum) + ":" + to_string(chapterNum) + ":" + to_string(verseNum) + ":" + to_string(numOfVerses);
 
     // Send request to server
     sendfifo.send(searchString);
      log("Sent request: " + searchString);
 
-    
+    // Start paragraph
     cout << "<p>";
     
     string response = recfifo.recv();
